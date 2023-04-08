@@ -1,48 +1,21 @@
-# merged-pr-info-action
-
-A composite GitHub Action to get information about a pull request merged into the default branch.
-
-## Inputs
-Please look into [action.yml](action.yml) to see the inputs.
-
-- `github-token`: The GitHub token to access the GitHub API.
-
-## Outputs
-- `pull_request_number`: The number of the pull request.
-- `pull_request_creator`: The creator of the pull request.
-
-## Use cases
-
-### Comment to the merged pull request if all jobs are passed
-The examples shows how to comment to the merged pull request if all jobs are passed.
-We assume that the job1 and job2 are the jobs that are executed when the pull request is merged into the default branch.
-Those can be something like to deploy a product.
-
-```yaml
 name: Comment to the merged pull request
 on:
   push:
     branches:
       - main
-jobs:
-  job1:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Hello, world!"
-  job2:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Hello, world!"
 
+jobs:
   comment:
-    needs: [job1, job2]
     permissions:
       contents: read
+      id-token: write
+      issues: write
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: ubie-inc/merged-pr-info-action@v1
+      # Pass the relative path to use the action
+      - uses: ./
         id: merged-pr-info
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -60,4 +33,3 @@ jobs:
               body: "@" + "${{ steps.merged-pr-info.outputs.pull_request_creator }}" +  " The jobs are passed!"
             });
             console.log(`Commented to the pull request ${pr_number}`);
-```
