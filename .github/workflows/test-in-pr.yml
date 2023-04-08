@@ -16,11 +16,11 @@ jobs:
       - uses: ./
         id: merged-pr-info
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ github.token }}
       - name: "Comment to the pull request it self"
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ github.token }}
           debug: true
           script: |
             const pr_number = "${{ steps.merged-pr-info.outputs.pull_request_number }}";
