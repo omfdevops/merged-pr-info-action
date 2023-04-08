@@ -1,6 +1,7 @@
 # merged-pr-info-action
 
 A composite GitHub Action to get information about a pull request merged into the default branch.
+For instance, we are able to notice the CI jobs on the default branch are passed to the creator of the merged pull request using the github-script action.
 
 ## Inputs
 Please look into [action.yml](action.yml) to see the inputs.
