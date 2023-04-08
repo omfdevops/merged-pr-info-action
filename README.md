@@ -14,7 +14,7 @@ Please look into [action.yml](action.yml) to see the inputs.
 ## Use cases
 
 ### Comment to the merged pull request if all jobs are passed
-The examples shows how to comment to the merged pull request if all jobs are passed.
+The examples show how to comment to the merged pull request if all jobs are passed.
 We assume that the job1 and job2 are the jobs that are executed when the pull request is merged into the default branch.
 Those can be something like to deploy a product.
 
