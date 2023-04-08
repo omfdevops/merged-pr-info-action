@@ -8,8 +8,8 @@ Please look into [action.yml](action.yml) to see the inputs.
 - `github-token`: The GitHub token to access the GitHub API.
 
 ## Outputs
-- `pull_request_number`: The number of the pull request.
-- `pull_request_creator`: The creator of the pull request.
+- `pull-request-number`: The number of the pull request.
+- `pull-request-creator`: The creator of the pull request.
 
 ## Use cases
 
@@ -41,7 +41,7 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: ubie-inc/merged-pr-info-action@v1
         id: merged-pr-info
         with:

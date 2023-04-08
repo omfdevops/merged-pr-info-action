@@ -8,15 +8,15 @@ branding:
   color: "blue"
 
 inputs:
-  github_token:
+  github-token:
     description: "GitHub token"
     required: true
 
 outputs:
-  pull_request_number:
+  pull-request-number:
     description: "The pull request number of the pull request created by the composite GitHub Action"
     value: ${{ steps.get_pr_number.outputs.result }}
-  pull_request_creator:
+  pull-request-creator:
     description: "The GitHub account name who created the pull request"
     value: ${{ steps.get_pr_creator.outputs.result }}
 
@@ -26,7 +26,7 @@ runs:
   steps:
     # We have to chec kout the default branch outside the composite GitHub Action.
     - name: "Checkout"
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: "Get the commit hash of the merged pull request"
       id: get_commit_hash
       shell: bash
