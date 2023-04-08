@@ -10,7 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: ubie-inc/merged-pr-info-action@v1
+      # Pass the relative path to use the action
+      - uses: ./
         id: merged-pr-info
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
