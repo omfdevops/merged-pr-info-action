@@ -1,5 +1,5 @@
 # The YAML contains definitions of inputs of the composite GitHub Action.
-name: "Maintain codeowners for google groups"
+name: "Get the merged pull request information"
 description: "Get information about the pull request merged into the default branch"
 author: "yu-iskw"
 
