@@ -1,0 +1,67 @@
+# The YAML contains definitions of inputs of the composite GitHub Action.
+name: "Maintain codeowners for google groups"
+description: "Get information about the pull request merged into the default branch"
+author: "yu-iskw"
+
+branding:
+  icon: "code"
+  color: "blue"
+
+inputs:
+  github_token:
+    description: "GitHub token"
+    required: true
+
+outputs:
+  pull_request_number:
+    description: "The pull request number of the pull request created by the composite GitHub Action"
+    value: ${{ steps.get_pr_number.outputs.result }}
+  pull_request_creator:
+    description: "The GitHub account name who created the pull request"
+    value: ${{ steps.get_pr_creator.outputs.result }}
+
+
+runs:
+  using: "composite"
+  steps:
+    # We have to chec kout the default branch outside of the composite GitHub Action.
+    - name: "Checkout"
+      uses: actions/checkout@v2
+    - name: "Get the commit hash of the merged pull request"
+      id: get_commit_hash
+      shell: bash
+      run: |
+        echo "commit_hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+    # Get the pull request number from the commit hash using github-script
+    - name: "Search the pull request number by the commit hash of the merged pull request"
+      id: get_pr_number
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        debug: true
+        script: |
+          const commit_hash = "${{ steps.get_commit_hash.outputs.commit_hash }}";
+          const { data: { items } } = await github.rest.search.issuesAndPullRequests({
+            q: `${commit_hash} type:pr is:merged`
+          });
+          const pr_number = items[0].number;
+          console.log(`The pull request number is ${pr_number}`);
+          return pr_number;
+    # Get the GitHub account name who created the merged pull request by the pull request number
+    - name: "Get the GitHub account name who created the merged pull request"
+      id: get_pr_creator
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        debug: true
+        result-encoding: string
+        script: |
+          const pr_number = "${{ steps.get_pr_number.outputs.result }}";
+          const pr = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: pr_number
+          });
+          const pr_creator = pr.data.user.login;
+          console.log(`The GitHub account name who created the merged pull request is ${pr_creator}`);
+          return pr_creator;
