@@ -52,12 +52,12 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           debug: true
           script: |
-            const pr_number = "${{ steps.merged-pr-info.outputs.pull_request_number }}";
+            const pr_number = "${{ steps.merged-pr-info.outputs.pull-request-number }}";
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: pr_number,
-              body: "@" + "${{ steps.merged-pr-info.outputs.pull_request_creator }}" +  " The jobs are passed!"
+              body: "@" + "${{ steps.merged-pr-info.outputs.pull-request-creator }}" +  " The jobs are passed!"
             });
             console.log(`Commented to the pull request ${pr_number}`);
 ```
