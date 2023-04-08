@@ -37,7 +37,7 @@ runs:
       id: get_pr_number
       uses: actions/github-script@v6
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ inputs.github_token }}
         debug: true
         script: |
           const commit_hash = "${{ steps.get_commit_hash.outputs.commit_hash }}";
@@ -52,7 +52,7 @@ runs:
       id: get_pr_creator
       uses: actions/github-script@v6
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ inputs.github_token }}
         debug: true
         result-encoding: string
         script: |
