@@ -11,16 +11,16 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       # Pass the relative path to use the action
       - uses: ./
         id: merged-pr-info
         with:
-          github-token: ${{ github.token }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: "Comment to the pull request it self"
         uses: actions/github-script@v6
         with:
-          github-token: ${{ github.token }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           debug: true
           script: |
             const pr_number = "${{ steps.merged-pr-info.outputs.pull_request_number }}";

@@ -13,7 +13,7 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       # Pass the relative path to use the action
       - uses: ./
         id: merged-pr-info
