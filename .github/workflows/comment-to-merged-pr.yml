@@ -26,7 +26,9 @@ jobs:
           debug: true
           script: |
             const pr_number = "${{ steps.merged-pr-info.outputs.pull-request-number }}";
-            const body = `@${{ steps.merged-pr-info.outputs.pull-request-creator }}\n` + "Hi, I'm a `bot`. I commented to the merged pull request.";
+            const body = `@${{ steps.merged-pr-info.outputs.pull-request-creator }}
+            How are you?
+            \`The back quotes have to be escaped.\``;
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
