@@ -26,10 +26,7 @@ jobs:
           debug: true
           script: |
             const pr_number = "${{ steps.merged-pr-info.outputs.pull-request-number }}";
-            const body = ```
-              @${{ steps.merged-pr-info.outputs.pull-request-creator }}
-              The jobs are passed!
-            ```;
+            const body = `@${{ steps.merged-pr-info.outputs.pull-request-creator }}\n` + "${{ inputs.message }}";
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
