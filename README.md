@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: ubie-inc/merged-pr-info-action@v1
+      - uses: yu-iskw/merged-pr-info-action@v1.0.1
         id: merged-pr-info
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
