@@ -19,7 +19,9 @@ outputs:
   pull-request-creator:
     description: "The GitHub account name who created the pull request"
     value: ${{ steps.get_pr_creator.outputs.result }}
-
+  pull-request-title:
+    description: "The title of the pull request"
+    value: ${{ steps.get_pr_title.outputs.result }}
 
 runs:
   using: "composite"
@@ -65,3 +67,20 @@ runs:
           const pr_creator = pr.data.user.login;
           console.log(`The GitHub account name who created the merged pull request is ${pr_creator}`);
           return pr_creator;
+    - name: "Get the pull request title"
+      id: get_pr_title
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ inputs.github-token }}
+        debug: true
+        result-encoding: string
+        script: |
+          const pr_number = "${{ steps.get_pr_number.outputs.result }}";
+          const pr = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: pr_number
+          });
+          const pr_title = pr.data.title;
+          console.log(`The title of the merged pull request is ${pr_title}`);
+          return pr_title;

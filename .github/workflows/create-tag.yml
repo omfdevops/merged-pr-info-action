@@ -1,0 +1,15 @@
+name: Create new tag
+on:
+  push:
+    branches: 
+      - master
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto Bump Version and Tag
+        id: tag_version
+        uses: omflibraries/github-tag-action@v6.1
+        with: 
+          github_token: ${{github.token}}
+          default_bump: patch
