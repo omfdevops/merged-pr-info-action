@@ -46,9 +46,14 @@ runs:
           const { data: { items } } = await github.rest.search.issuesAndPullRequests({
             q: `${commit_hash} type:pr is:merged`
           });
-          const pr_number = items[0].number;
-          console.log(`The pull request number is ${pr_number}`);
-          return pr_number;
+          if (items.length === 0) {
+            console.log(`No merged pull request found for commit hash ${commit_hash}`);
+            return '';
+          } else {
+            const pr_number = items[0].number;
+            console.log(`The pull request number is ${pr_number}`);
+            return pr_number;
+          }
     # Get the GitHub account name who created the merged pull request by the pull request number
     - name: "Get the GitHub account name who created the merged pull request"
       id: get_pr_creator
