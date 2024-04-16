@@ -106,22 +106,5 @@ runs:
             repo: context.repo.repo,
             pull_number: pr_number
           });
-          const pr_title = pr.data.title;
-          console.log(`The title of the merged pull request is ${pr_title}`);
-          return pr_title;
-    - name: "Get the pull request branch"
-      id: get_pr_branch
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{ inputs.github-token }}
-        debug: true
-        result-encoding: string
-        script: |
-          const pr_number = "${{ steps.get_pr_number.outputs.result }}";
-          const pr = await github.rest.pulls.get({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_number: pr_number
-          });
           const pr_branch = pr.data.head.ref; 
           return pr_branch; 
