@@ -50,40 +50,32 @@ runs:
 
           console.log(`Fetching pull request for commit hash: ${commitHash}`);
 
-          // Step 1: Search for the merged pull request by commit hash
-          const { data: { items } } = await github.rest.search.issuesAndPullRequests({
-            q: `${commitHash} repo:${owner}/${repo} type:pr is:merged`,
+          // Use the dedicated endpoint to list pull requests associated with the commit
+          const { data: pulls } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+            owner,
+            repo,
+            commit_sha: commitHash,
+            mediaType: {
+              previews: ['groot']
+            }
           });
 
-          if (items.length === 0) {
-            console.log(`No merged pull request found for commit hash: ${commitHash}`);
+          if (pulls.length === 0) {
+            console.log(`No pull requests associated with commit hash: ${commitHash}`);
             throw new Error("No merged pull request found.");
           }
 
-          const prNumber = items[0].number;
-          console.log(`Pull request number found: ${prNumber}`);
-
-          // Step 2: Get detailed pull request information
-          const { data: pr } = await github.rest.pulls.get({
-            owner,
-            repo,
-            pull_number: prNumber,
-          });
-
-          const prCreator = pr.user.login;
-          const prTitle = pr.title;
-          const prBranch = pr.head.ref;
-
+          const pr = pulls[0]; // Use the first associated PR
           console.log(`Pull request details:`);
-          console.log(`- Number: ${prNumber}`);
-          console.log(`- Creator: ${prCreator}`);
-          console.log(`- Title: ${prTitle}`);
-          console.log(`- Branch: ${prBranch}`);
+          console.log(`- Number: ${pr.number}`);
+          console.log(`- Creator: ${pr.user.login}`);
+          console.log(`- Title: ${pr.title}`);
+          console.log(`- Branch: ${pr.head.ref}`);
 
-          // Set outputs
           return {
-            pull_request_number: prNumber,
-            pull_request_creator: prCreator,
-            pull_request_title: prTitle,
-            pull_request_branch: prBranch,
+            pull_request_number: pr.number,
+            pull_request_creator: pr.user.login,
+            pull_request_title: pr.title,
+            pull_request_branch: pr.head.ref,
           };
+
