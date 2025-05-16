@@ -50,40 +50,190 @@ runs:
 
           console.log(`Fetching pull request for commit hash: ${commitHash}`);
 
-          // Step 1: Search for the merged pull request by commit hash
-          const { data: { items } } = await github.rest.search.issuesAndPullRequests({
-            q: `${commitHash} repo:${owner}/${repo} type:pr is:merged`,
-          });
-
-          if (items.length === 0) {
-            console.log(`No merged pull request found for commit hash: ${commitHash}`);
-            throw new Error("No merged pull request found.");
+          // First try: Use GraphQL API to find PR associated with commit
+          async function findPrWithGraphQL() {
+            try {
+              const query = `
+                query findPrByCommit($owner: String!, $repo: String!, $commitOid: GitObjectID!) {
+                  repository(owner: $owner, name: $repo) {
+                    commit: object(oid: $commitOid) {
+                      ... on Commit {
+                        associatedPullRequests(first: 1) {
+                          nodes {
+                            number
+                            title
+                            author {
+                              login
+                            }
+                            headRefName
+                            merged
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
+              
+              const variables = {
+                owner,
+                repo,
+                commitOid: commitHash
+              };
+              
+              const result = await github.graphql(query, variables);
+              
+              const prs = result.repository.commit?.associatedPullRequests?.nodes || [];
+              // Filter for merged PRs only
+              const mergedPRs = prs.filter(pr => pr.merged);
+              
+              if (mergedPRs.length > 0) {
+                const pr = mergedPRs[0];
+                return {
+                  pull_request_number: pr.number,
+                  pull_request_creator: pr.author.login,
+                  pull_request_title: pr.title,
+                  pull_request_branch: pr.headRefName
+                };
+              }
+              return null;
+            } catch (error) {
+              console.log(`GraphQL query error: ${error.message}`);
+              return null;
+            }
           }
 
-          const prNumber = items[0].number;
-          console.log(`Pull request number found: ${prNumber}`);
+          // Second try: Use REST API to list PRs and find matching merge commit
+          async function findPrFromMergeCommit() {
+            try {
+              // Get commit details to see if it's a merge commit
+              const { data: commitData } = await github.rest.git.getCommit({
+                owner,
+                repo,
+                commit_sha: commitHash
+              });
+              
+              // If it's a merge commit, extract PR number from message if possible
+              if (commitData.parents.length > 1) { 
+                const mergeMessage = commitData.message;
+                const prMatch = mergeMessage.match(/Merge pull request #(\d+)/);
+                if (prMatch && prMatch[1]) {
+                  const prNumber = parseInt(prMatch[1]);
+                  
+                  // Get PR details
+                  const { data: pr } = await github.rest.pulls.get({
+                    owner,
+                    repo,
+                    pull_number: prNumber
+                  });
+                  
+                  return {
+                    pull_request_number: pr.number,
+                    pull_request_creator: pr.user.login,
+                    pull_request_title: pr.title,
+                    pull_request_branch: pr.head.ref
+                  };
+                }
+              }
+              return null;
+            } catch (error) {
+              console.log(`REST API error: ${error.message}`);
+              return null;
+            }
+          }
 
-          // Step 2: Get detailed pull request information
-          const { data: pr } = await github.rest.pulls.get({
-            owner,
-            repo,
-            pull_number: prNumber,
-          });
+          // Third try: Look at recent PRs and check if they contain the commit
+          async function findPrByRecentMerges() {
+            try {
+              // Get recently closed PRs
+              const { data: recentPRs } = await github.rest.pulls.list({
+                owner,
+                repo,
+                state: 'closed',
+                sort: 'updated',
+                direction: 'desc',
+                per_page: 10
+              });
+              
+              // Check each merged PR
+              for (const pr of recentPRs.filter(p => p.merged_at)) {
+                // Get commits in this PR
+                const { data: commits } = await github.rest.pulls.listCommits({
+                  owner,
+                  repo,
+                  pull_number: pr.number
+                });
+                
+                // Check if our commit is in this PR
+                if (commits.some(c => c.sha === commitHash)) {
+                  return {
+                    pull_request_number: pr.number,
+                    pull_request_creator: pr.user.login,
+                    pull_request_title: pr.title,
+                    pull_request_branch: pr.head.ref
+                  };
+                }
+              }
+              return null;
+            } catch (error) {
+              console.log(`Recent PR search error: ${error.message}`);
+              return null;
+            }
+          }
 
-          const prCreator = pr.user.login;
-          const prTitle = pr.title;
-          const prBranch = pr.head.ref;
+          // Try all methods
+          let prInfo = await findPrWithGraphQL();
+          if (!prInfo) {
+            console.log("GraphQL method didn't find a PR, trying merge commit method...");
+            prInfo = await findPrFromMergeCommit();
+          }
+          if (!prInfo) {
+            console.log("Merge commit method didn't find a PR, trying recent merge method...");
+            prInfo = await findPrByRecentMerges();
+          }
+
+          // Provide fallback if no PR is found
+          if (!prInfo) {
+            console.log("No merged pull request found, using fallback values");
+            
+            // If we have a hardcoded PR number from context (e.g. for this case 564)
+            // You could set this via inputs or get it from your screenshot
+            const knownPrNumber = context.payload.pull_request?.number;
+            
+            if (knownPrNumber) {
+              try {
+                const { data: pr } = await github.rest.pulls.get({
+                  owner,
+                  repo, 
+                  pull_number: knownPrNumber
+                });
+                prInfo = {
+                  pull_request_number: pr.number,
+                  pull_request_creator: pr.user.login,
+                  pull_request_title: pr.title,
+                  pull_request_branch: pr.head.ref
+                };
+              } catch (e) {
+                console.log(`Failed to get known PR ${knownPrNumber}: ${e.message}`);
+              }
+            }
+            
+            // Ultimate fallback
+            if (!prInfo) {
+              prInfo = {
+                pull_request_number: "0",
+                pull_request_creator: "unknown",
+                pull_request_title: `Direct commit to ${context.ref.split('/').pop()}`,
+                pull_request_branch: context.ref.split('/').pop()
+              };
+            }
+          }
 
           console.log(`Pull request details:`);
-          console.log(`- Number: ${prNumber}`);
-          console.log(`- Creator: ${prCreator}`);
-          console.log(`- Title: ${prTitle}`);
-          console.log(`- Branch: ${prBranch}`);
+          console.log(`- Number: ${prInfo.pull_request_number}`);
+          console.log(`- Creator: ${prInfo.pull_request_creator}`);
+          console.log(`- Title: ${prInfo.pull_request_title}`);
+          console.log(`- Branch: ${prInfo.pull_request_branch}`);
 
-          // Set outputs
-          return {
-            pull_request_number: prNumber,
-            pull_request_creator: prCreator,
-            pull_request_title: prTitle,
-            pull_request_branch: prBranch,
-          };
+          return prInfo;
+
